@@ -1,13 +1,13 @@
 export const runtime = "nodejs";
 
 import { NextRequest, NextResponse } from "next/server";
-import { createServerClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/server";
 import nodemailer from "nodemailer";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const supabase = await createServerClient();
+    const supabase = await createClient();
 
     const { data, error } = await supabase
       .from("appointments")
