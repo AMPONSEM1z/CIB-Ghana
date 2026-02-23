@@ -24,7 +24,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { CalendarDays, Loader2 } from "lucide-react";
+import { CalendarDays, Loader2, Truck } from "lucide-react";
 
 const serviceTypes = [
   "ID Card Replacement",
@@ -34,6 +34,13 @@ const serviceTypes = [
   "Certificate Collection",
 ] as const;
 
+// New collection methods constant
+const collectionMethods = [
+  "Self Collection",
+  "Dispatch Rider",
+  "Personal Representative",
+] as const;
+
 const bookingSchema = z.object({
   full_name: z.string().min(2, "Full name is required"),
   member_id: z.string().min(1, "Member ID is required"),
@@ -41,6 +48,10 @@ const bookingSchema = z.object({
   phone: z.string().min(7, "Valid phone number is required"),
   service_type: z.enum(serviceTypes, {
     required_error: "Please select a service",
+  }),
+  // Added collection method to schema
+  collection_method: z.enum(collectionMethods, {
+    required_error: "Please select a method of collection",
   }),
   appointment_date: z.string().min(1, "Please select a date"),
   appointment_time: z.string().min(1, "Please select a time"),
@@ -77,6 +88,8 @@ export function BookingForm() {
           email: data.email,
           phone: data.phone,
           service_type: data.service_type,
+          // Sending collection method to Supabase
+          collection_method: data.collection_method,
           appointment_date: data.appointment_date,
           appointment_time: data.appointment_time,
           notes: data.notes || null,
@@ -99,7 +112,6 @@ export function BookingForm() {
     }
   };
 
-  // Compute minimum date (tomorrow)
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const minDate = tomorrow.toISOString().split("T")[0];
@@ -126,7 +138,6 @@ export function BookingForm() {
           )}
 
           <div className="grid gap-5 md:grid-cols-2">
-            {/* Full Name */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="full_name">Full Name</Label>
               <Input
@@ -142,7 +153,6 @@ export function BookingForm() {
               )}
             </div>
 
-            {/* Member ID */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="member_id">Member ID</Label>
               <Input
@@ -158,7 +168,6 @@ export function BookingForm() {
               )}
             </div>
 
-            {/* Email */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">Email Address</Label>
               <Input
@@ -175,7 +184,6 @@ export function BookingForm() {
               )}
             </div>
 
-            {/* Phone */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="phone">Phone Number</Label>
               <Input
@@ -222,8 +230,38 @@ export function BookingForm() {
             )}
           </div>
 
+          {/* Method of Collection - NEW FEATURE */}
+          <div className="flex flex-col gap-1.5">
+            <Label className="flex items-center gap-2">
+              <Truck className="h-4 w-4" /> Method of Collection
+            </Label>
+            <Select
+              onValueChange={(value) =>
+                setValue(
+                  "collection_method",
+                  value as BookingFormData["collection_method"],
+                )
+              }
+            >
+              <SelectTrigger aria-invalid={!!errors.collection_method}>
+                <SelectValue placeholder="Choose how you want to receive it" />
+              </SelectTrigger>
+              <SelectContent>
+                {collectionMethods.map((method) => (
+                  <SelectItem key={method} value={method}>
+                    {method}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {errors.collection_method && (
+              <p className="text-xs text-destructive">
+                {errors.collection_method.message}
+              </p>
+            )}
+          </div>
+
           <div className="grid gap-5 md:grid-cols-2">
-            {/* Date */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="appointment_date">Preferred Date</Label>
               <Input
@@ -240,7 +278,6 @@ export function BookingForm() {
               )}
             </div>
 
-            {/* Time */}
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="appointment_time">Preferred Time</Label>
               <Input
@@ -257,12 +294,11 @@ export function BookingForm() {
             </div>
           </div>
 
-          {/* Notes */}
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="notes">Additional Notes (Optional)</Label>
             <Textarea
               id="notes"
-              placeholder="Any special requests or information..."
+              placeholder="If Dispatch, please provide delivery address. If Representative, provide their full name."
               rows={3}
               {...register("notes")}
             />
